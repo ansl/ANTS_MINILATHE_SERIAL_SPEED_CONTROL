@@ -17,9 +17,9 @@ For the PWM signal we use the timer2 that has 16 bits (65535) configured as a fa
 For the RC filter we used a 105 ceramic capacitor  and 10k Pot as a rheostate to adjust the ripple and the response.
 
 The direction of the Spindle can be adjusted manually or you can also control it with the arduino. For the last you need
- 1 - Disconect the direction switch and jump the safety wire that switch off the power while changing the direction. IMPORTANT do not operate the lathe without this safety system changing the spindle direction while hte motor is under load might destroy your lathe and a sirk for your persona!!!
- 2 - Conect the motor wires to a 2way realy to conmute wires
- 3 - Conect pin2 (external interrupt0) to pin3 (Spindle direction output to 2 way relay). This substitutes the safety cutoff of hte direction switch. In summary what is does is to measure the direction the spindle should be moving and hte status of the pin. In this way in case anything disrupts the input of hte realy it switch it of in case of missaligment.
+ *1 - Disconect the direction switch and jump the safety wire that switch off the power while changing the direction. IMPORTANT do not operate the lathe without this safety system changing the spindle direction while hte motor is under load might destroy your lathe and a sirk for your persona!!!
+ *2 - Conect the motor wires to a 2way realy to conmute wires
+ *3 - Conect pin2 (external interrupt0) to pin3 (Spindle direction output to 2 way relay). This substitutes the safety cutoff of hte direction switch. In summary what is does is to measure the direction the spindle should be moving and hte status of the pin. In this way in case anything disrupts the input of hte realy it switch it of in case of missaligment.
 
 
  Software configuration (ongoing)
