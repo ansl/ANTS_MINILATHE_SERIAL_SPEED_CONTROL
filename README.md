@@ -1,7 +1,6 @@
 # ANTS_MINILATHE_SERIAL_SPEED_CONTROL
 
 The purpose of this project is to substitute the stock Spidle speed control of a minilathe CJ0618 with a digital controlled alternative. For this specific project the minilathe includes a "CT_MOTOR@191125" control board, that uses a 4.7k potentiometer to regulate the speed
-![image](https://github.com/ansl/ANTS_MINILATHE_SERIAL_SPEED_CONTROL/assets/5759139/cdd021ea-77be-46bc-a8f5-d472df9c004e)
 
 Asuming the speed control cicuit to be a black box uisng a single input the potentiomenter we took as a main hipothesis that teh potentiomenter operates a as voltaje divisor being the voltaje  in terminal P2 the input to the speed control circuit.
 
@@ -9,7 +8,7 @@ To substitute the potentiometer we have used an arduino mini pro 16MHz 5V  to ge
 
 
 ## Wiring Diagram:
-![image](https://github.com/ansl/ANTS_MINILATHE_SERIAL_SPEED_CONTROL/assets/5759139/bfa4ec04-6c8e-44ce-8f5f-e29173b5767b)
+![image](https://github.com/ansl/ANTS_MINILATHE_SERIAL_SPEED_CONTROL/assets/5759139/c63f2de2-cf95-48e2-814c-70faf6c3438d)
 
 
 
