@@ -5,7 +5,7 @@ The purpose of this project is to substitute the stock Spidle speed control of a
 
 Asuming the speed control cicuit to be a black box uisng a single input the potentiomenter we took as a main hipothesis that teh potentiomenter operates a as voltaje divisor being the voltaje  in terminal P2 the input to the speed control circuit.
 
-To substitute the potentiometer we have used an arduino mini pro 16MHz 5V  to generate  a PWM signal (any other dev board capable of generating PWM signals  can work) and a RC low pass filter to smooth the output voltaje in the board terminal P2. So difining the duty of the PWM signal we get a variable constant voltaje between 0 and 5V. 
+To substitute the potentiometer we have used an arduino mini pro 16MHz 5V  to generate  a PWM signal (any other dev board capable of generating PWM signals  can work) and a RC low pass filter to smooth the output voltaje in the board terminal P2. So difining the duty of the PWM signal we get a variable constant voltaje between 0 and 5V. It is important to take into account that this specific motor driver stops working what hte voltage on P2 decays below 300mV is this for taht the minimun duty lays arround 650(derived from experimentation) is waht in the code is called ZERO POINT and needs to be adjusted for each driver for a safe use.
 
 
 ## Wiring Diagram:
@@ -20,7 +20,7 @@ For the RC filter we used a 105 ceramic capacitor  and 10k Pot as a rheostate to
 The direction of the Spindle can be adjusted manually or you can also control it with the arduino. For the last you need
  1. - Disconect the direction switch and jump the safety wire that switch off the power while changing the direction. **IMPORTANT do not operate the lathe without this safety system changing the spindle direction while the motor is under load might destroy your lathe and a risk for your persona!!!**
  1. - Conect the motor wires to a 2way realy to conmute wires
- 1. - Conect pin2 (external interrupt0) to pin3 (Spindle direction output to 2 way relay). This substitutes the safety cutoff of hte direction switch. In summary what is does is to measure the direction the spindle should be moving and hte status of the pin. In this way in case anything disrupts the input of hte realy it switch it of in case of missaligment.
+ 1. - Conect pin2 (external interrupt0) to pin3 (Spindle direction output to 2 way relay). This substitutes the safety cutoff of the direction switch. In summary what is does is to monitor the Status of PIN3 and in case of flange compare the value  with the expected stare of the pin. If ther is a missaligment becuase  anything has disturbed the state of the pin the MCU shuts down the spindle  power .
 
 
  ## Software configuration (ongoing)
