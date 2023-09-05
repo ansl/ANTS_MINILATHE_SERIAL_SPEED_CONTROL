@@ -1,10 +1,10 @@
 # ANTS_MINILATHE_SERIAL_SPEED_CONTROL
 
-The purpose of this project is to substitute the stock Spidle speed control of a minilathe CJ0618 with a digital controlled alternative. For this specific project the minilathe includes a "CT_MOTOR@191125" control board, that uses a 4.7k potentiometer to regulate the speed
+The purpose of this project is to substitute the stock Spidle speed control of a **minilathe CJ0618** with a digital controlled alternative. 
 
-Asuming the speed control cicuit to be a black box uisng a single input the potentiomenter we took as a main hipothesis that teh potentiomenter operates a as voltaje divisor being the voltaje  in terminal P2 the input to the speed control circuit.
+For this specific project the minilathe includes a "CT_MOTOR@191125" control board, that uses a 4.7k potentiometer to regulate the speed. Assuming the speed control circuit to be a black box that uses a the potentiometer as input we took as a main hipothesis that the potentiomenter operates a as voltaje divisor being the voltaje in terminal P2 the input to the speed regulator.
 
-To substitute the potentiometer we have used an arduino mini pro 16MHz 5V  to generate  a PWM signal (any other dev board capable of generating PWM signals  can work) and a RC low pass filter to smooth the output voltaje in the board terminal P2. So difining the duty of the PWM signal we get a variable constant voltaje between 0 and 5V. It is important to take into account that this specific motor driver stops working what hte voltage on P2 decays below 300mV is this for taht the minimun duty lays arround 650(derived from experimentation) is waht in the code is called ZERO POINT and needs to be adjusted for each driver for a safe use.
+To substitute the potentiometer we have used an arduino mini pro 16MHz 5V  to generate  a PWM signal (any other dev board capable of generating PWM signals  can work) and a RC low pass filter to smooth the output voltaje in the board terminal P2. So defining the duty of the PWM signal we get a variable constant voltaje between 0 and 5V. It is important to take into account that this specific motor driver stops working when the voltage on P2 decays below 300mV so we have defined a minimun duty to ensure we dont loose control on the spindle  (duty=650 derived from experimentation) this is definedi in the code as ZERO POINT and needs to be adjusted for each especific motor driver for a safe use.
 
 
 ## Wiring Diagram:
