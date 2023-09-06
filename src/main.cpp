@@ -8,7 +8,7 @@ char receivedChars[numChars]; //STM32|-1000 1090785098\n
 char MSG_in[13];
 char checksum_in[10];
 char DATA_in[6];
-char crc_test[5]="hola";
+unsigned char crc_test[]={0xFF};
 void recvWithEndMarker();
 void showNewData();
 boolean newData = false;
@@ -23,7 +23,7 @@ uint32_t checksum=0;
 uint32_t crc32b(char *message, size_t l)
 {
    size_t i, j;
-   unsigned int crc, msb;
+   uint32_t crc, msb;
 
    crc = 0xFFFFFFFF;
    for(i = 0; i < l; i++) {
@@ -72,9 +72,9 @@ pinMode(10,OUTPUT);// salida pwm
   sei();
 Serial.begin(115200);//Serial com
 Serial.println("<ANTS Serial SPEED CONTROLLER is ready>");
-checksum= crc32b(crc_test, sizeof(crc_test));
+checksum= crc32b(crc_test, 1);
 // checksum=~checksum;
-Serial.println(checksum);
+Serial.println(checksum,HEX);
 }
 
 void loop() {
