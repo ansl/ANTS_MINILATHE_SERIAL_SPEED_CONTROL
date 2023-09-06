@@ -1,148 +1,180 @@
 #include <Arduino.h>
-#include <CRC32.h>
+
+
+#define PWM 10
+#define DIR_PIN 3
+#define DIR_CHANGE_PIN 2
+#define PWM_ZERO 600
 
 const byte numChars = 24;
+char receivedChars[numChars]; // STM32|-1000 1090785098\n
 
-char receivedChars[numChars]; //STM32|-1000 1090785098\n
-
-char MSG_in[13];
-char checksum_in[10];
-char DATA_in[6];
-unsigned char crc_test[]={0xFF};
-void recvWithEndMarker();
-void showNewData();
+bool halt_flag = false;
 boolean newData = false;
 
-uint16_t val=0;
-int8_t dir=1;
-CRC32 crc;
-uint32_t checksum=0;
+uint8_t CHECKSUM_CALC(char *buff, uint8_t n);
+void recvWithEndMarker();
+void spindle_calc();
 
+volatile uint16_t val = PWM_ZERO;
+volatile int8_t dir = 1;
+uint8_t checksum = 0;
 
-
-uint32_t crc32b(char *message, size_t l)
+void setup()
 {
-   size_t i, j;
-   uint32_t crc, msb;
+    // put your setup code here, to run once:
+    pinMode(LED_BUILTIN, OUTPUT);                  // salida pwm
+    pinMode(PWM, OUTPUT);                  // salida pwm
+    pinMode(DIR_PIN, OUTPUT);              // salida pwm
+    pinMode(DIR_CHANGE_PIN, INPUT_PULLUP); // salida pwm
+                                           //////////////////////////////////////////////////////////////////////////////////////
+    // INTERRUPTS
+    cli();
+    // inicializo timer1/pwm
 
-   crc = 0xFFFFFFFF;
-   for(i = 0; i < l; i++) {
-      // xor next byte to upper bits of crc
-      crc ^= (((unsigned int)message[i])<<24);
-      for (j = 0; j < 8; j++) {    // Do eight times.
-            msb = crc>>31;
-            crc <<= 1;
-            crc ^= (0 - msb) & 0x04C11DB7;
-      }
-   }
-   return crc;         // don't complement crc on output
+    TCCR1A = 0; // Inicializo los control registers del timer1 tanto el A como el B
+    TCCR1B = 0;
+    TCCR1C = 0;
+    TIMSK1 = 0;
+
+    // TCCR1A |=(1 << COM1A1);   //defino la salida en el OCR1A en toogle mode #pin9
+    TCCR1A |= (1 << COM1B1); // defino la salida en el OCR1B en toogle mode #pin10
+
+    TCCR1A |= (1 << WGM10); // WGMxx Lo define como fast pwm con el TOP en OCR1A /la comparaci?n en el OC1B
+    TCCR1A |= (1 << WGM11);
+    TCCR1B |= (1 << WGM12);
+    TCCR1B |= (1 << WGM13);
+
+    TCCR1B |= (1 << CS10); // Seteo el prescaling en 1
+
+    TIMSK1 |= (1 << OCIE1B);
+    TIMSK1 |= (1 << TOIE1);
+
+    OCR1A = 10000;
+    OCR1B = PWM_ZERO;
+
+    // inicializo external interrupt
+    EICRA = 0;
+    EICRA |= (1 << ISC00); // Enable relay change alarm interrupt for raising/falling edges
+
+    EIMSK = 0;
+    EIMSK |= (1 << INT0); // Enable relay change alarm interrupt
+
+    sei();
+    Serial.begin(115200);
+    delay(10);
+    //Serial.println("<ANTS Serial SPEED CONTROLLER is ready>");
 }
 
-void setup() {
-  // put your setup code here, to run once:
-pinMode(10,OUTPUT);// salida pwm
+void loop()
+{
+    recvWithEndMarker();
+    spindle_calc();
 
-   //////////////////////////////////////////////////////////////////////////////////////
-  //INTERRUPTS
-  cli();
-  //inicializo timer1/pwm
-
-  TCCR1A=0;         //Inicializo los control registers del timer1 tanto el A como el B
-  TCCR1B=0;
-  TCCR1C=0;
-  TIMSK1=0;
-
-  //TCCR1A |=(1 << COM1A1);   //defino la salida en el OCR1A en toogle mode #pin9
-  TCCR1A |=(1 << COM1B1);   //defino la salida en el OCR1B en toogle mode #pin10
-
-  TCCR1A |=(1 << WGM10);    //WGMxx Lo define como fast pwm con el TOP en OCR1A /la comparaci?n en el OC1B
-  TCCR1A |=(1 << WGM11);
-  TCCR1B |=(1 << WGM12);
-  TCCR1B |=(1 << WGM13);
-
-  TCCR1B |=(1 << CS10);   //Seteo el prescaling en 1
-
-  TIMSK1 |=(1 << OCIE1B);
-  TIMSK1 |=(1 << TOIE1);
-
-  OCR1A=10000;        
-  OCR1B=0;
-
-   
-  sei();
-Serial.begin(115200);//Serial com
-Serial.println("<ANTS Serial SPEED CONTROLLER is ready>");
-checksum= crc32b(crc_test, 1);
-// checksum=~checksum;
-Serial.println(checksum,HEX);
+    // if (halt_flag){
+    //     Serial.println("HALT");
+    //     delay(300);
+    // }
+    delay(1);
 }
 
-void loop() {
-   recvWithEndMarker();
-   showNewData();
-   delay(1);
-}
-
-void recvWithEndMarker() {
+void recvWithEndMarker()
+{
     static byte ndx = 0;
     char endMarker = '\n';
     char rc;
-    
-    while (Serial.available() > 0 && newData == false) {
-        rc = Serial.read();
 
-        if (rc != endMarker) {
+    while (Serial.available() > 0 && newData == false)
+    {
+        rc = Serial.read();
+        
+        if (rc != endMarker)
+        {
             receivedChars[ndx] = rc;
             ndx++;
-            if (ndx >= numChars) {
+            if (ndx >= numChars)
+            {
                 ndx = numChars - 1;
             }
         }
-        else {
-            receivedChars[ndx] = '\0'; // terminate the string
-            // sscanf(receivedChars,"%s",MSG_in);
-            // sscanf(receivedChars,"%*s %s",checksum_in);
-            // sscanf(receivedChars,"STM32|%s",DATA_in);
-            // Serial.println(receivedChars);
-            // Serial.println(MSG_in);
-            // Serial.println(checksum_in);
-            // Serial.println(DATA_in);
-             ndx = 0;
-            // checksum = crc.calculate(MSG_in,  sizeof(MSG_in));
-
-            // if(checksum==atol(checksum_in)){
-               newData = true;
-            //   val=atoi(DATA_in);
-            //   dir=val/abs(val);
-            // }
-
-            // else {
-            //   Serial.println("DATA_CORRUPTED");
-            // }
-            val=atol(receivedChars);
-            dir=val/abs(val);      
-
+        else
+        {
+            ndx++;
+            receivedChars[ndx] = '\n';
+            
+            if (!halt_flag)
+            {
+                if (sscanf(receivedChars, "ANTS_S|%d|%d|", &val, &dir) == 2 && receivedChars[16] == CHECKSUM_CALC(receivedChars, 16) )//&& sscanf(receivedChars, "ANTS_S|%d|%d|", &val, &dir) == 2)
+                {
+                    digitalWrite(LED_BUILTIN,!digitalRead(LED_BUILTIN));
+                    newData = true;
+                     //int n=sscanf(receivedChars,"ANTS_S|%d|%d|",&val,&dir);
+                    Serial.print("$N#\n");
+                }
+                else
+                {
+                    Serial.print("$C#\n");
+                    
+                }
+            }
+            else if (halt_flag && strstr(receivedChars, "UNHALT") != NULL)
+            {
+                halt_flag = false;
+                val=PWM_ZERO;
+                Serial.print("$I#\n");
+            }
+            ndx = 0;
         }
     }
 }
 
-void showNewData() {
-    if (newData == true) {
-        // Serial.print("CRC32:  ");
-        // Serial.print(checksum);
-        Serial.print("  TARGET VAL:  ");
-        //Serial.println(receivedChars);
-        Serial.print(abs(val));
-        Serial.print("  TARGET DIR:  ");
-        //Serial.println(receivedChars);
-        Serial.println(dir);
+void spindle_calc()
+{
+    if (newData == true)
+    {
+        if (dir >= 0)
+        {
+            digitalWrite(DIR_PIN, HIGH);
+        }
+
+        else
+        {
+            digitalWrite(DIR_PIN, LOW);
+        }
+
         newData = false;
     }
 }
 
-ISR(TIMER1_OVF_vect){
- OCR1B=constrain(abs((int16_t)(10000.0*val/2500.0)),0,10000);
+ISR(TIMER1_OVF_vect)
+{
+    OCR1B = val;
 }
-ISR(TIMER1_COMPB_vect){
+ISR(TIMER1_COMPB_vect)
+{
+}
 
+ISR(INT0_vect)
+{ // ENC_BUTTON
+
+    if (dir != (digitalRead(DIR_PIN) * 2 - 1))
+    {
+        // OCR1B = PWM_ZERO;
+        val = PWM_ZERO;
+        halt_flag = true;
+        Serial.print("$H#\n");
+    }
+}
+
+uint8_t CHECKSUM_CALC(char *buff, uint8_t n)
+{
+
+    uint8_t checksum = 0;
+
+    for (int i = 0; i < n; i++)
+    {
+        checksum ^= buff[i];
+    }
+
+    return checksum;
 }
