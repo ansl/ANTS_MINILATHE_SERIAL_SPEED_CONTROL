@@ -1,4 +1,4 @@
-# ANTS_MINILATHE_SERIAL_SPEED_CONTROL
+# ANTS MINILATHE SERIAL SPEED CONTROL
 
 The purpose of this project is to substitute the stock Spidle speed control of a **minilathe CJ0618** with a digital controlled alternative. 
 
